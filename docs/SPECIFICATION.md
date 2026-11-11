@@ -20,6 +20,15 @@
 - Offline install should not promise online services are immediately usable. Offline repositories/assets need design and testing.
 - Sensitive keys/accounts must **never** be baked into the ISO.
 
+## Live ISO and user accounts (required)
+- The **live ISO must boot directly into the ROS Cinnamon desktop without a password prompt**; use a dedicated ephemeral live-session user and an explicit LightDM autologin configuration that applies **only** to the live environment.
+- The live username is a configurable build-time setting (for example `ros-live`), **not a fixed installed-system user**. The live account must not be migrated into the installed system.
+- Do not create a generic shared password for the live user. If the live installer needs privileges, follow the upstream Mint live-session model and limit any passwordless authorization to the live environment.
+- **After installation, do not enable autologin by default.** The installed system must use the username chosen in the installer, with a normal password-protected graphical login and separate LUKS unlock if encryption is selected.
+- All per-user ROS files must be installed for the **actual target user**, without hardcoding `ichbinroot`, numeric UIDs, home directories or machine-specific paths. Prefer `$HOME`, `getent passwd`, target-user resolution, and installer-provided account metadata as appropriate; never assume the installing live user is the eventual account.
+- Boot/installer tests must verify that Live ISO autologin works, installed machines require credentials, no live account or live-only autologin rule remains after install, and two differently named user accounts receive correct ROS settings.
+- Do not bake VPN private keys, access tokens, hostnames, passwords or reference-VM identity into the image.
+
 ## Core apps
 - ROS WireGuard: import, connect, disconnect, view and delete NetworkManager profiles.
 - ROS Have-To: optional applications, progress, removal and categorized catalog.
