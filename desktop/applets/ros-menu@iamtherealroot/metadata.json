@@ -1,0 +1,7 @@
+{
+  "uuid": "ros-menu@iamtherealroot",
+  "name": "ROS Menu",
+  "description": "Eigenständiges ROS-Startmenü für Cinnamon: Suche, Kategorien, Favoriten und Systemaktionen.",
+  "version": "1.0.0-preview",
+  "max-instances": 1
+}
