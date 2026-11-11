@@ -1,0 +1,7 @@
+{
+  "uuid": "ros-network@iamtherealroot",
+  "name": "ROS Network",
+  "description": "Verbundene oder getrennte ROS-Wurzel entsprechend dem NetworkManager-Verbindungsstatus",
+  "version": "1.0.0-preview",
+  "max-instances": 1
+}
