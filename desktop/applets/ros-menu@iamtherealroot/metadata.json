@@ -1,7 +1,7 @@
 {
   "uuid": "ros-menu@iamtherealroot",
   "name": "ROS Menu",
-  "description": "ROS Startmenü: zweispaltige rahmenlose Programmkacheln ohne sichtbare Scrollleisten",
-  "version": "1.5.4-preview",
+  "description": "ROS Menu: rahmenlose App-Kacheln in voller Breite und entkoppelte Kategorie-Auswahl",
+  "version": "1.5.5-preview",
   "max-instances": 1
 }
