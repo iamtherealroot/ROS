@@ -1,7 +1,7 @@
 {
   "uuid": "ros-menu@iamtherealroot",
   "name": "ROS Menu",
-  "description": "ROS Startmenü: sichere Kategorie-Auswahl, freedesktop-Kategorien und zweispaltige Glas-Kacheln",
-  "version": "1.5.3-preview",
+  "description": "ROS Startmenü: zweispaltige rahmenlose Programmkacheln ohne sichtbare Scrollleisten",
+  "version": "1.5.4-preview",
   "max-instances": 1
 }
