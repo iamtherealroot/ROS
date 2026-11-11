@@ -1,0 +1,7 @@
+{
+  "uuid": "ros-power-tree@iamtherealroot",
+  "name": "ROS Power Tree",
+  "description": "Baumakku mit 0–100 % Füllstand und Prozentanzeige, UPower oder ausdrücklich aktivierter Demo-Modus",
+  "icon": "battery",
+  "max-instances": 1
+}

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Designs
+Name[de]=Designs
+Comment=Die sechs ROS-Designs auswählen
+Comment[de]=Die sechs ROS-Designs auswählen
+Exec=/usr/bin/python3 -c "import runpy, os; runpy.run_path(os.path.expanduser('~/.local/share/ros/designs/designs.py'), run_name='__main__')"
+Icon=preferences-desktop-theme
+Terminal=false
+Categories=Settings;DesktopSettings;
+Keywords=ROS;Designs;Themes;Gaming;IT;Creator;Stealth;Nordic;
+StartupNotify=true

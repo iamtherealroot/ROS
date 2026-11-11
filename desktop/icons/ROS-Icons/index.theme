@@ -1,0 +1,11 @@
+[Icon Theme]
+Name=ROS Icons
+Comment=Mint-green Cinnamon status icons with Mint-Y fallback
+Inherits=Mint-Y-Teal,Mint-Y,hicolor
+Directories=scalable/status
+[scalable/status]
+Size=24
+Type=Scalable
+MinSize=16
+MaxSize=64
+Context=Status

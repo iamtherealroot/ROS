@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+PALETTES="$HOME/.config/ros/theme-palettes.txt"
+if [[ ! -r "$PALETTES" ]]; then echo "ROS Themes nicht installiert." >&2; exit 1; fi
+usage(){ echo 'Verwendung: ros-theme list | apply {Gaming|IT|Creator|Stealth|Nordic|Dark} | gui'; }
+list(){ echo 'Dark|ROS Dark (Standard)'; grep -v '^#' "$PALETTES" | cut -d'|' -f1,2; }
+apply(){
+  local selected="$1" gtk wall
+  if [[ "$selected" == 'Dark' ]]; then
+    gtk='Mint-Y-Dark'; wall='file:///usr/share/backgrounds/ros/wallpaper.png'
+    if [[ ! -e /usr/share/backgrounds/ros/wallpaper.png ]]; then
+      echo "Hinweis: ROS-Dark-Wallpaper ist nicht unter /usr/share/backgrounds/ros/wallpaper.png vorhanden. Hintergrund bleibt unverändert."
+      wall=''
+    fi
+  else
+    if ! grep -q "^${selected}|" "$PALETTES"; then usage; exit 2; fi
+    gtk="$(grep "^${selected}|" "$PALETTES" | cut -d'|' -f8)"
+    wall="file://$HOME/.local/share/backgrounds/ros/ROS-${selected}.jpg"
+  fi
+  [[ -f "$HOME/.themes/ROS-${selected}/cinnamon/cinnamon.css" ]] || { echo "Theme fehlt: ROS-${selected}" >&2; exit 1; }
+  mkdir -p "$HOME/.config/ros"
+  gsettings set org.cinnamon.theme name "ROS-${selected}"
+  gsettings set org.cinnamon.desktop.interface gtk-theme "$gtk"
+  gsettings set org.cinnamon.desktop.wm.preferences theme "$gtk"
+  # ROS-Icons remain active to preserve consistent menu/status branding.
+  if [[ -d "$HOME/.local/share/icons/ROS-Icons" ]]; then
+    gsettings set org.cinnamon.desktop.interface icon-theme 'ROS-Icons'
+  fi
+  if [[ -n "$wall" ]]; then
+    gsettings set org.cinnamon.desktop.background picture-uri "$wall"
+    gsettings set org.cinnamon.desktop.background picture-options 'zoom'
+  fi
+  echo "$selected" > "$HOME/.config/ros/active-theme"
+  echo "ROS-${selected} aktiviert. Falls die Panel-Farben noch alt sind: grafisch ab- und anmelden."
+}
+case "${1:-}" in
+  list) list ;;
+  apply) [[ -n "${2:-}" ]] || { usage; exit 2; }; apply "$2" ;;
+  gui)
+    command -v zenity >/dev/null || { echo 'Zenity fehlt. Verwende ros-theme list/apply.' >&2; exit 1; }
+    selection=$(list | awk -F'|' '{print $1; print $2}' | zenity --list --title='ROS Themes' --text='Design für ROS auswählen' --column='ROS Theme' --column='Name' --width=430 --height=360 --print-column=1) || exit 0
+    [[ -z "$selection" ]] || apply "$selection"
+    ;;
+  *) usage; exit 2 ;;
+esac
