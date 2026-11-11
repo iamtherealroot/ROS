@@ -1,4 +1,4 @@
-/* ROS Menu 1.3 preview — Cinnamon 6.6, aligned launcher. */
+/* ROS Menu 1.4 preview — Cinnamon 6.6, aligned launcher. */
 const Applet = imports.ui.applet;
 const PopupMenu = imports.ui.popupMenu;
 const Util = imports.misc.util;
@@ -120,7 +120,11 @@ class ROSMenu extends Applet.TextIconApplet {
 
         // Full-width list of programs; the search remains visible above.
         const resultsRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
-        const resultsBox = new St.BoxLayout({vertical: true, style: 'width: 458px; padding: 0 2px;'});
+        resultsRow.actor.style = 'padding-left: 0px;';
+        const resultsBox = new St.BoxLayout({
+            vertical: true, x_align: Clutter.ActorAlign.START,
+            style: 'width: 458px; padding: 0 2px;'
+        });
         this._resultsTitle = new St.Label({
             text: 'Alle Programme',
             style: 'font-weight: bold; color: #98edb5; padding: 5px 7px;'
@@ -130,7 +134,10 @@ class ROSMenu extends Applet.TextIconApplet {
             style: 'width: 455px; min-height: 145px; max-height: 190px;',
             x_fill: true, y_fill: true
         });
-        this._appList = new St.BoxLayout({vertical: true, x_expand: true, x_align: Clutter.ActorAlign.FILL, style: 'width: 428px; spacing: 1px;'});
+        this._appList = new St.BoxLayout({
+            vertical: true, x_expand: false, x_align: Clutter.ActorAlign.START,
+            style: 'width: 428px; spacing: 1px;'
+        });
         scroll.add_actor(this._appList);
         resultsBox.add_child(scroll);
         resultsRow.addActor(resultsBox);
@@ -140,19 +147,24 @@ class ROSMenu extends Applet.TextIconApplet {
 
         const powerRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
         const powerBox = new St.BoxLayout({vertical: false, style: 'spacing: 6px; padding: 3px 2px 2px 2px;'});
-        for (const [title, icon, command] of [
-            ['Sperren', 'system-lock-screen-symbolic', 'cinnamon-screensaver-command --lock'],
-            ['Abmelden', 'system-log-out-symbolic', 'cinnamon-session-quit --logout'],
-            ['Neustart', 'view-refresh-symbolic', 'cinnamon-session-quit --reboot'],
-            ['Ausschalten', 'system-shutdown-symbolic', 'cinnamon-session-quit --power-off']
+        for (const [title, icon, command, background, foreground] of [
+            ['Sperren', 'system-lock-screen-symbolic', 'cinnamon-screensaver-command --lock', '#304957', '#e2f3ff'],
+            ['Abmelden', 'system-log-out-symbolic', 'cinnamon-session-quit --logout', '#645320', '#fff1ae'],
+            ['Neustart', 'view-refresh-symbolic', 'cinnamon-session-quit --reboot', '#78441e', '#ffe1bd'],
+            ['Ausschalten', 'system-shutdown-symbolic', 'cinnamon-session-quit --power-off', '#773034', '#ffe0e0']
         ]) {
             const button = new St.Button({
                 reactive: true, can_focus: true, track_hover: true,
-                style: 'padding: 8px 7px; border-radius: 6px; background-color: #213328;'
+                style: 'padding: 8px 7px; border-radius: 6px; background-color: ' + background + '; color: ' + foreground + ';'
             });
             const contents = new St.BoxLayout({vertical: false, style: 'spacing: 5px;'});
-            contents.add_child(this._makeIcon(icon, 15));
-            contents.add_child(new St.Label({text: title, y_align: 2, style: 'color: #ffffff;'}));
+            const actionIcon = this._makeIcon(icon, 15);
+            actionIcon.style = 'color: ' + foreground + ';';
+            contents.add_child(actionIcon);
+            contents.add_child(new St.Label({
+                text: title, y_align: Clutter.ActorAlign.CENTER,
+                style: 'color: ' + foreground + ';'
+            }));
             button.set_child(contents);
             button.connect('clicked', () => {
                 this.menu.close();
@@ -212,10 +224,14 @@ class ROSMenu extends Applet.TextIconApplet {
                 continue;
             const button = new St.Button({
                 reactive: true, can_focus: true, track_hover: true,
-                x_expand: true, x_align: Clutter.ActorAlign.FILL,
+                x_expand: false, x_align: Clutter.ActorAlign.START,
                 style: 'width: 425px; padding: 6px 9px; border-radius: 5px; color: #ffffff;'
             });
-            const row = new St.BoxLayout({vertical: false, x_expand: true, x_align: Clutter.ActorAlign.START, style: 'spacing: 10px;'});
+            const row = new St.BoxLayout({
+                vertical: false, x_expand: false,
+                x_align: Clutter.ActorAlign.START,
+                style: 'spacing: 10px;'
+            });
             const icon = app.get_icon();
             if (icon)
                 row.add_child(new St.Icon({gicon: icon, icon_size: 20}));
