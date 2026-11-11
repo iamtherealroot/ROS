@@ -53,6 +53,25 @@ def install():
     print("ROS Menu files installed:", TARGET)
     print("Panel unchanged. Review before activating using --activate.")
 
+def update():
+    if os.geteuid() == 0:
+        raise RuntimeError("Do not run with sudo")
+    if TARGET.is_symlink() or not TARGET.is_dir():
+        raise RuntimeError("ROS Menu is not installed or target is a symlink")
+    if any(a.split(":")[3] == UUID for a in get_applets()):
+        raise RuntimeError("Restore the stock menu before updating ROS Menu files")
+    for name in ("applet.js", "metadata.json", "tree.svg"):
+        if not (SOURCE / name).is_file() or (SOURCE / name).is_symlink():
+            raise RuntimeError("Invalid ROS Menu source: " + name)
+    BACKUPS.mkdir(parents=True, exist_ok=True)
+    backup = BACKUPS / ("ros-menu-files-" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
+    shutil.copytree(TARGET, backup)
+    for name in ("applet.js", "metadata.json", "tree.svg"):
+        shutil.copy2(SOURCE / name, TARGET / name)
+    print("ROS Menu applet files updated. Previous files:", backup)
+    print("Activate the new version with --activate.")
+
+
 def activate():
     if os.geteuid() == 0:
         raise RuntimeError("Do not run with sudo")
@@ -98,6 +117,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--install", action="store_true")
+    mode.add_argument("--update", action="store_true")
     mode.add_argument("--activate", action="store_true")
     mode.add_argument("--restore", type=Path)
     args = parser.parse_args()
@@ -105,6 +125,8 @@ def main():
         install()
     elif args.activate:
         activate()
+    elif args.update:
+        update()
     else:
         restore(args.restore)
 
