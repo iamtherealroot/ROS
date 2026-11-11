@@ -1,4 +1,4 @@
-/* ROS Menu 1.5 preview — Cinnamon 6.6, aligned launcher. */
+/* ROS Menu 1.5.2 preview — Cinnamon 6.6, aligned launcher. */
 const Applet = imports.ui.applet;
 const PopupMenu = imports.ui.popupMenu;
 const Util = imports.misc.util;
@@ -132,12 +132,12 @@ class ROSMenu extends Applet.TextIconApplet {
         });
         resultsBox.add_child(this._resultsTitle);
         const scroll = new St.ScrollView({
-            style: 'width: 455px; min-height: 145px; max-height: 190px;',
+            style: 'width: 465px; min-height: 145px; max-height: 190px;',
             x_fill: true, y_fill: true
         });
         this._appList = new St.BoxLayout({
             vertical: true, x_expand: false, x_align: Clutter.ActorAlign.START,
-            style: 'width: 428px; spacing: 1px;'
+            style: 'width: 450px; spacing: 5px;'
         });
         scroll.add_actor(this._appList);
         resultsBox.add_child(scroll);
@@ -221,8 +221,8 @@ class ROSMenu extends Applet.TextIconApplet {
                 : 'width: 136px; padding: 7px 7px; border-radius: 6px; color: #d8e9dd;';
         }
 
-        // Create an actual two-column layout, left aligned in each tile.
-        // Long names are ellipsized, with full names shown as tooltips.
+        // Two evenly sized columns with translucent glass-like application tiles.
+        // Long names are truncated to keep the grid aligned.
         const visible = this._apps.filter(app => {
             const name = app.get_display_name() || '';
             const description = app.get_description() || '';
@@ -245,14 +245,14 @@ class ROSMenu extends Applet.TextIconApplet {
             const gridRow = new St.BoxLayout({
                 vertical: false,
                 x_align: Clutter.ActorAlign.START,
-                style: 'spacing: 7px;'
+                style: 'width: 450px; spacing: 8px;'
             });
             for (const app of visible.slice(i, i + 2)) {
                 const name = app.get_display_name() || '';
                 const tile = new St.Button({
                     reactive: true, can_focus: true, track_hover: true,
                     x_align: Clutter.ActorAlign.START,
-                    style: 'width: 207px; padding: 7px 7px; border-radius: 6px; background-color: #1b3023; color: #f3fff6;'
+                    style: 'width: 221px; padding: 9px 9px; border-radius: 8px; background-color: rgba(210, 255, 224, 0.08); border: 1px solid rgba(155, 232, 179, 0.22); color: #f3fff6;'
                 });
                 const contents = new St.BoxLayout({
                     vertical: false, x_align: Clutter.ActorAlign.START,
@@ -268,7 +268,7 @@ class ROSMenu extends Applet.TextIconApplet {
                     style: 'color: #f3fff6;'
                 });
                 label.clutter_text.set_ellipsize(Pango.EllipsizeMode.END);
-                label.set_width(155);
+                label.set_width(156);
                 contents.add_child(label);
                 tile.set_child(contents);
                 tile.connect('clicked', () => this._launch(app));
