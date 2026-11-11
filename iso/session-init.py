@@ -28,7 +28,7 @@ def main():
             return
     setting("org.cinnamon.desktop.interface", "icon-theme", "ROS-Icons")
     # First-session wallpaper; existing accounts with a completion marker are untouched.
-    selected = current.stdout.strip().strip("\'\\"")
+    selected = current.stdout.strip().strip(chr(39) + chr(34))
     if selected not in THEMES:
         selected = "ROS-Dark"
     suffix = selected.removeprefix("ROS-")
