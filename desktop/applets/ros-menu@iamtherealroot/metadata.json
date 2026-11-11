@@ -1,7 +1,7 @@
 {
   "uuid": "ros-menu@iamtherealroot",
   "name": "ROS Menu",
-  "description": "ROS Startmenü mit zweispaltigen Glas-Kacheln über die volle Listenbreite und vier farbigen Systembuttons",
-  "version": "1.5.2-preview",
+  "description": "ROS Startmenü: sichere Kategorie-Auswahl, freedesktop-Kategorien und zweispaltige Glas-Kacheln",
+  "version": "1.5.3-preview",
   "max-instances": 1
 }
