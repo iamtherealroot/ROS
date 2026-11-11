@@ -1,9 +1,10 @@
-/* ROS Menu 1.2 preview — compact launcher, Cinnamon 6.6. */
+/* ROS Menu 1.3 preview — Cinnamon 6.6, aligned launcher. */
 const Applet = imports.ui.applet;
 const PopupMenu = imports.ui.popupMenu;
 const Util = imports.misc.util;
 const Gio = imports.gi.Gio;
 const St = imports.gi.St;
+const Clutter = imports.gi.Clutter;
 
 const SECTIONS = [
     ['Alle Programme', null, 'view-grid-symbolic'],
@@ -49,7 +50,7 @@ class ROSMenu extends Applet.TextIconApplet {
 
     _build() {
         // Compact vertical launcher: search, shortcuts, categories, programs, power.
-        this.menu.actor.style = 'background-color: #101d16; color: #f0fff3; min-width: 515px;';
+        this.menu.actor.style = 'background-color: #101d16; color: #f0fff3; min-width: 505px;';
         this._heading('ROS   ·   Sei wie Root!');
 
         const searchRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
@@ -57,7 +58,7 @@ class ROSMenu extends Applet.TextIconApplet {
             hint_text: 'Programm oder Einstellung suchen …',
             can_focus: true,
             track_hover: true,
-            style: 'width: 470px; padding: 10px; background-color: #203429; color: #ffffff; border: 1px solid #5c9871; border-radius: 8px;'
+            style: 'width: 465px; padding: 10px; background-color: #203429; color: #ffffff; border: 1px solid #5c9871; border-radius: 8px;'
         });
         searchRow.addActor(this._search);
         this.menu.addMenuItem(searchRow);
@@ -67,19 +68,21 @@ class ROSMenu extends Applet.TextIconApplet {
         const favoriteRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
         const favoriteBox = new St.BoxLayout({
             vertical: false,
-            style: 'spacing: 9px; padding: 4px 2px 7px 2px;'
+            style: 'spacing: 8px; padding: 2px 2px 5px 2px;'
         });
         for (const [title, id, icon] of [
-            ['Dateien', 'nemo.desktop', 'system-file-manager-symbolic'],
+            ['Dateien', 'nemo.desktop', 'folder-symbolic'],
             ['Firefox', 'firefox.desktop', 'web-browser-symbolic'],
             ['Terminal', 'ros-terminal.desktop', 'utilities-terminal-symbolic']
         ]) {
             const button = new St.Button({
                 reactive: true, can_focus: true, track_hover: true,
-                style: 'width: 135px; padding: 8px 9px; border-radius: 6px; background-color: #234631;'
+                style: 'width: 136px; padding: 8px 9px; border-radius: 6px; background-color: #234631;'
             });
             const inside = new St.BoxLayout({vertical: false, style: 'spacing: 7px;'});
-            inside.add_child(this._makeIcon(icon, 17));
+            const favoriteApp = Gio.DesktopAppInfo.new(id);
+            const appIcon = favoriteApp && favoriteApp.get_icon();
+            inside.add_child(appIcon ? new St.Icon({gicon: appIcon, icon_size: 19}) : this._makeIcon(icon, 19));
             inside.add_child(new St.Label({text: title, y_align: 2, style: 'color: #ffffff;'}));
             button.set_child(inside);
             button.connect('clicked', () => this._launchId(id));
@@ -89,14 +92,14 @@ class ROSMenu extends Applet.TextIconApplet {
         this.menu.addMenuItem(favoriteRow);
 
         const categoryItem = new PopupMenu.PopupBaseMenuItem({reactive: false});
-        const categoryGrid = new St.BoxLayout({vertical: true, style: 'spacing: 4px; padding: 5px 2px 6px 2px;'});
+        const categoryGrid = new St.BoxLayout({vertical: true, style: 'spacing: 3px; padding: 3px 2px 4px 2px;'});
         // Three even columns are easier to scan than a long left sidebar.
         for (let index = 0; index < SECTIONS.length; index += 3) {
             const row = new St.BoxLayout({vertical: false, style: 'spacing: 5px;'});
             for (const [title, category, icon] of SECTIONS.slice(index, index + 3)) {
                 const button = new St.Button({
                     reactive: true, can_focus: true, track_hover: true,
-                    style: 'width: 135px; padding: 7px 7px; border-radius: 6px;'
+                    style: 'width: 136px; padding: 7px 7px; border-radius: 6px;'
                 });
                 const contents = new St.BoxLayout({vertical: false, style: 'spacing: 6px;'});
                 contents.add_child(this._makeIcon(icon, 16));
@@ -117,17 +120,17 @@ class ROSMenu extends Applet.TextIconApplet {
 
         // Full-width list of programs; the search remains visible above.
         const resultsRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
-        const resultsBox = new St.BoxLayout({vertical: true, style: 'width: 462px; padding: 0 2px;'});
+        const resultsBox = new St.BoxLayout({vertical: true, style: 'width: 458px; padding: 0 2px;'});
         this._resultsTitle = new St.Label({
             text: 'Alle Programme',
             style: 'font-weight: bold; color: #98edb5; padding: 5px 7px;'
         });
         resultsBox.add_child(this._resultsTitle);
         const scroll = new St.ScrollView({
-            style: 'width: 455px; min-height: 145px; max-height: 205px;',
+            style: 'width: 455px; min-height: 145px; max-height: 190px;',
             x_fill: true, y_fill: true
         });
-        this._appList = new St.BoxLayout({vertical: true, style: 'spacing: 2px;'});
+        this._appList = new St.BoxLayout({vertical: true, x_expand: true, x_align: Clutter.ActorAlign.FILL, style: 'width: 428px; spacing: 1px;'});
         scroll.add_actor(this._appList);
         resultsBox.add_child(scroll);
         resultsRow.addActor(resultsBox);
@@ -194,7 +197,7 @@ class ROSMenu extends Applet.TextIconApplet {
         for (const [key, button] of this._categoryButtons) {
             button.style = key === this._category
                 ? 'padding: 8px 6px; border-radius: 6px; background-color: #305a3c; color: #ffffff;'
-                : 'padding: 8px 6px; border-radius: 6px; color: #d8e9dd;';
+                : 'width: 136px; padding: 7px 7px; border-radius: 6px; color: #d8e9dd;';
         }
 
         let count = 0;
@@ -209,15 +212,16 @@ class ROSMenu extends Applet.TextIconApplet {
                 continue;
             const button = new St.Button({
                 reactive: true, can_focus: true, track_hover: true,
-                style: 'padding: 7px 9px; border-radius: 5px; color: #ffffff;'
+                x_expand: true, x_align: Clutter.ActorAlign.FILL,
+                style: 'width: 425px; padding: 6px 9px; border-radius: 5px; color: #ffffff;'
             });
-            const row = new St.BoxLayout({vertical: false, style: 'spacing: 9px;'});
+            const row = new St.BoxLayout({vertical: false, x_expand: true, x_align: Clutter.ActorAlign.START, style: 'spacing: 10px;'});
             const icon = app.get_icon();
             if (icon)
                 row.add_child(new St.Icon({gicon: icon, icon_size: 20}));
             else
                 row.add_child(this._makeIcon('application-x-executable-symbolic', 20));
-            row.add_child(new St.Label({text: name, y_align: 2, style: 'color: #f3fff6;'}));
+            row.add_child(new St.Label({text: name, y_align: Clutter.ActorAlign.CENTER, x_align: Clutter.ActorAlign.START, style: 'color: #f3fff6;'}));
             button.set_child(row);
             button.connect('clicked', () => this._launch(app));
             this._appList.add_child(button);
