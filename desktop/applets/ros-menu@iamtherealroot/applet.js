@@ -1,10 +1,11 @@
-/* ROS Menu 1.4 preview — Cinnamon 6.6, aligned launcher. */
+/* ROS Menu 1.5 preview — Cinnamon 6.6, aligned launcher. */
 const Applet = imports.ui.applet;
 const PopupMenu = imports.ui.popupMenu;
 const Util = imports.misc.util;
 const Gio = imports.gi.Gio;
 const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
+const Pango = imports.gi.Pango;
 
 const SECTIONS = [
     ['Alle Programme', null, 'view-grid-symbolic'],
@@ -146,7 +147,11 @@ class ROSMenu extends Applet.TextIconApplet {
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
         const powerRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
-        const powerBox = new St.BoxLayout({vertical: false, style: 'spacing: 6px; padding: 3px 2px 2px 2px;'});
+        const powerBox = new St.BoxLayout({
+            vertical: false, homogeneous: true,
+            x_expand: true, x_align: Clutter.ActorAlign.FILL,
+            style: 'width: 465px; spacing: 6px; padding: 3px 0px 2px 0px;'
+        });
         for (const [title, icon, command, background, foreground] of [
             ['Sperren', 'system-lock-screen-symbolic', 'cinnamon-screensaver-command --lock', '#304957', '#e2f3ff'],
             ['Abmelden', 'system-log-out-symbolic', 'cinnamon-session-quit --logout', '#645320', '#fff1ae'],
@@ -155,10 +160,14 @@ class ROSMenu extends Applet.TextIconApplet {
         ]) {
             const button = new St.Button({
                 reactive: true, can_focus: true, track_hover: true,
-                style: 'padding: 8px 7px; border-radius: 6px; background-color: ' + background + '; color: ' + foreground + ';'
+                x_expand: true, x_align: Clutter.ActorAlign.FILL,
+                style: 'padding: 9px 5px; border-radius: 6px; background-color: ' + background + '; color: ' + foreground + ';'
             });
-            const contents = new St.BoxLayout({vertical: false, style: 'spacing: 5px;'});
-            const actionIcon = this._makeIcon(icon, 15);
+            const contents = new St.BoxLayout({
+                vertical: false, x_align: Clutter.ActorAlign.CENTER,
+                style: 'spacing: 4px;'
+            });
+            const actionIcon = this._makeIcon(icon, 14);
             actionIcon.style = 'color: ' + foreground + ';';
             contents.add_child(actionIcon);
             contents.add_child(new St.Label({
@@ -212,41 +221,62 @@ class ROSMenu extends Applet.TextIconApplet {
                 : 'width: 136px; padding: 7px 7px; border-radius: 6px; color: #d8e9dd;';
         }
 
-        let count = 0;
-        for (const app of this._apps) {
+        // Create an actual two-column layout, left aligned in each tile.
+        // Long names are ellipsized, with full names shown as tooltips.
+        const visible = this._apps.filter(app => {
             const name = app.get_display_name() || '';
             const description = app.get_description() || '';
             const categories = (app.get_categories && app.get_categories()) || '';
             if (!term && this._category && !categories.split(';').includes(this._category))
-                continue;
-            if (term && !(name.toLocaleLowerCase().includes(term) ||
-                        description.toLocaleLowerCase().includes(term)))
-                continue;
-            const button = new St.Button({
-                reactive: true, can_focus: true, track_hover: true,
-                x_expand: false, x_align: Clutter.ActorAlign.START,
-                style: 'width: 425px; padding: 6px 9px; border-radius: 5px; color: #ffffff;'
-            });
-            const row = new St.BoxLayout({
-                vertical: false, x_expand: false,
-                x_align: Clutter.ActorAlign.START,
-                style: 'spacing: 10px;'
-            });
-            const icon = app.get_icon();
-            if (icon)
-                row.add_child(new St.Icon({gicon: icon, icon_size: 20}));
-            else
-                row.add_child(this._makeIcon('application-x-executable-symbolic', 20));
-            row.add_child(new St.Label({text: name, y_align: Clutter.ActorAlign.CENTER, x_align: Clutter.ActorAlign.START, style: 'color: #f3fff6;'}));
-            button.set_child(row);
-            button.connect('clicked', () => this._launch(app));
-            this._appList.add_child(button);
-            if (++count >= this._maxRows)
-                break;
+                return false;
+            return !term || name.toLocaleLowerCase().includes(term) ||
+                description.toLocaleLowerCase().includes(term);
+        }).slice(0, this._maxRows);
+
+        if (visible.length === 0) {
+            this._appList.add_child(new St.Label({
+                text: 'Keine Anwendungen gefunden',
+                style: 'padding: 12px; color: #f3fff6;'
+            }));
+            return;
         }
-        if (!count)
-            this._appList.add_child(new St.Label({text: 'Keine Anwendungen gefunden',
-                                                  style: 'padding: 12px;'}));
+
+        for (let i = 0; i < visible.length; i += 2) {
+            const gridRow = new St.BoxLayout({
+                vertical: false,
+                x_align: Clutter.ActorAlign.START,
+                style: 'spacing: 7px;'
+            });
+            for (const app of visible.slice(i, i + 2)) {
+                const name = app.get_display_name() || '';
+                const tile = new St.Button({
+                    reactive: true, can_focus: true, track_hover: true,
+                    x_align: Clutter.ActorAlign.START,
+                    style: 'width: 207px; padding: 7px 7px; border-radius: 6px; background-color: #1b3023; color: #f3fff6;'
+                });
+                const contents = new St.BoxLayout({
+                    vertical: false, x_align: Clutter.ActorAlign.START,
+                    style: 'spacing: 7px;'
+                });
+                const icon = app.get_icon();
+                contents.add_child(icon
+                    ? new St.Icon({gicon: icon, icon_size: 19})
+                    : this._makeIcon('application-x-executable-symbolic', 19));
+                const label = new St.Label({
+                    text: name, y_align: Clutter.ActorAlign.CENTER,
+                    x_align: Clutter.ActorAlign.START,
+                    style: 'color: #f3fff6;'
+                });
+                label.clutter_text.set_ellipsize(Pango.EllipsizeMode.END);
+                label.set_width(155);
+                contents.add_child(label);
+                tile.set_child(contents);
+                tile.set_tooltip_text(name);
+                tile.connect('clicked', () => this._launch(app));
+                gridRow.add_child(tile);
+            }
+            this._appList.add_child(gridRow);
+        }
     }
 
     on_applet_clicked() {
