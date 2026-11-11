@@ -196,7 +196,7 @@ class ROSMenu extends Applet.TextIconApplet {
         this._resultsTitle.text = term ? 'Suchergebnisse' : (selected ? selected[0] : 'Alle Programme');
         for (const [key, button] of this._categoryButtons) {
             button.style = key === this._category
-                ? 'padding: 8px 6px; border-radius: 6px; background-color: #305a3c; color: #ffffff;'
+                ? 'width: 136px; padding: 7px 7px; border-radius: 6px; background-color: #305a3c; color: #ffffff;'
                 : 'width: 136px; padding: 7px 7px; border-radius: 6px; color: #d8e9dd;';
         }
 
