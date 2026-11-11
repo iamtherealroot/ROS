@@ -143,6 +143,14 @@ def apply():
     name = current.stdout.strip().strip("\"'")
     if name not in [f"ROS-{t}" for t in THEMES]:
         set_setting("org.cinnamon.theme", "name", "ROS-Dark")
+        # First install: switch the entire new user desktop, not just panel CSS.
+        # Existing ROS users retain their selected background and theme.
+        wallpaper = HOME / ".local/share/backgrounds/ros/ROS-Dark.png"
+        if wallpaper.is_file():
+            set_setting("org.cinnamon.desktop.background", "picture-uri", wallpaper.as_uri())
+            set_setting("org.cinnamon.desktop.background", "picture-options", "zoom")
+        set_setting("org.cinnamon.desktop.interface", "gtk-theme", "Mint-Y-Dark")
+        set_setting("org.cinnamon.desktop.wm.preferences", "theme", "Mint-Y-Dark")
     set_setting("org.cinnamon.desktop.interface", "icon-theme", "ROS-Icons")
     if shutil.which("terminator"):
         set_setting("org.cinnamon.desktop.default-applications.terminal", "exec", "terminator")
