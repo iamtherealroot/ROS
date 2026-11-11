@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ROS Desktop Installer 1.3 — staged, reversible Cinnamon applet migration.
+"""ROS Desktop Installer 1.3.1 — staged, reversible Cinnamon applet migration.
 
 Default is a non-mutating plan. --stage installs desktop assets using the
 existing backed-up v1.2 installer and safely stages ROS Menu / Network Native;
@@ -79,17 +79,17 @@ def menu_current():
 def plan():
     current = panel()
     names = [uuid(x) for x in current]
-    print("ROS Desktop Installer 1.3 — DRY RUN")
+    print("ROS Desktop Installer 1.3.1 — DRY RUN")
     print("Current account:", HOME.name)
     print("Cinnamon applets:")
-    for name in (STOCK_MENU, MENU, "network@cinnamon.org", NET, POWER):
+    for name in (STOCK_MENU, MENU, "network@cinnamon.org", NET, "power@cinnamon.org", POWER):
         print(f"  {name}: {names.count(name)} active")
     print("ROS Menu code:", "up to date" if menu_current() else
           "installed but differs" if installed(MENU) else "not installed")
     print("ROS Native Network files:", "available" if installed(NET) else "not staged")
     print("ROS Power Tree files:", "available" if installed(POWER) else "not installed")
     print("Plan: --stage backs up and refreshes desktop assets; it never activates panel applets.")
-    print("Plan: --activate backs up the complete applet list and changes only approved menu/network entries.")
+    print("Plan: --activate backs up the complete applet list and changes only approved menu/network/power entries.")
     print("Existing personal theme remains selected; LightDM and accounts are untouched.")
     print("No changes made.")
 
@@ -149,6 +149,10 @@ def target_panel(before):
         raise RuntimeError("No unique menu entry to replace")
     if counts[NET] == 0 and sum(counts[x] for x in OLD_NET) != 1:
         raise RuntimeError("Cannot find exactly one original network applet")
+    if counts[POWER] > 1:
+        raise RuntimeError("Duplicate ROS Power Tree applets detected")
+    if counts[POWER] == 0 and sum(uuid(x) == "power@cinnamon.org" for x in before) > 1:
+        raise RuntimeError("Duplicate stock power applets detected")
     for name in (MENU, NET, POWER):
         if not installed(name):
             raise RuntimeError(name + " missing; run --stage first")
@@ -181,6 +185,36 @@ def target_panel(before):
                 parts[4] = str(max(used_ids, default=0) + 2)
                 cleaned[i] = ":".join(parts)
                 break
+    # New Mint accounts still have power@cinnamon.org. Convert it to
+    # ROS Power Tree; if it is absent, add the ROS indicator after sound.
+    # Never alter an already active Power Tree instance.
+    if counts[POWER] == 0:
+        used_ids = [int(x.split(":")[4]) for x in cleaned if x.split(":")[4].isdigit()]
+        next_id = max(used_ids, default=0) + 1
+        native = [x for x in cleaned if uuid(x) == "power@cinnamon.org"]
+        if len(native) == 1:
+            for i, item in enumerate(cleaned):
+                if item == native[0]:
+                    parts = item.split(":")
+                    parts[3], parts[4] = POWER, str(next_id)
+                    cleaned[i] = ":".join(parts)
+                    break
+        else:
+            sound = [x for x in cleaned if uuid(x) == "sound@cinnamon.org"]
+            if len(sound) != 1:
+                raise RuntimeError("No unambiguous stock power or sound applet; panel unchanged")
+            index = cleaned.index(sound[0]) + 1
+            location = sound[0].split(":")
+            location[2], location[3], location[4] = str(int(location[2]) + 1), POWER, str(next_id)
+            cleaned.insert(index, ":".join(location))
+            # Renumber right-side entries after the insertion to avoid
+            # duplicate panel positions; retain every applet instance ID.
+            side = location[:2]
+            for i in range(index + 1, len(cleaned)):
+                segments = cleaned[i].split(":")
+                if segments[:2] == side:
+                    segments[2] = str(int(segments[2]) + 1)
+                    cleaned[i] = ":".join(segments)
     return cleaned
 
 def activate():
@@ -196,7 +230,7 @@ def activate():
         "home": str(HOME), "before": before, "after": after,
     }, indent=2) + "\n")
     run("gsettings", "set", "org.cinnamon", "enabled-applets", str(after))
-    print("ROS menu + native network activated; unrelated applets unchanged.")
+    print("ROS menu, native network and Power Tree configured; unrelated applets unchanged.")
     print("Panel backup:", backup)
     print("Rollback: python3 scripts/install-ros-desktop-1.3.py --restore-panel", backup)
     print("Log out/in if icons or cached code look stale.")
