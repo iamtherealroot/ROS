@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ROS Desktop Installer 1.0 (per-user only).
+"""ROS Desktop Installer 1.1 (per-user only).
 
 Default mode prints a plan. --apply installs ROS desktop assets with backup.
 --restore BACKUP_DIR restores only paths and GSettings values that were managed.
@@ -27,6 +27,7 @@ ROUTES = [
     ("apps/designs/launch.sh", ".local/bin/ros-designs"),
     ("apps/designs/designs.desktop", ".local/share/applications/ros-theme-selector.desktop"),
     ("desktop/bin/ros-theme", ".local/bin/ros-theme"),
+    ("desktop/applications/ros-terminal.desktop", ".local/share/applications/ros-terminal.desktop"),
     ("desktop/config/theme-palettes.txt", ".config/ros/theme-palettes.txt"),
 ] + [
     ("desktop/backgrounds/ROS-" + t + (".png" if t == "Dark" else ".jpg"),
@@ -40,6 +41,7 @@ SETTINGS = [
     ("org.cinnamon.desktop.wm.preferences", "theme"),
     ("org.cinnamon.desktop.background", "picture-uri"),
     ("org.cinnamon.desktop.background", "picture-options"),
+    ("org.cinnamon.desktop.default-applications.terminal", "exec"),
 ]
 
 def invoke(*args, check=True):
@@ -133,6 +135,10 @@ def apply():
     if name not in [f"ROS-{t}" for t in THEMES]:
         set_setting("org.cinnamon.theme", "name", "ROS-Dark")
     set_setting("org.cinnamon.desktop.interface", "icon-theme", "ROS-Icons")
+    if shutil.which("terminator"):
+        set_setting("org.cinnamon.desktop.default-applications.terminal", "exec", "terminator")
+    else:
+        print("WARN: Terminator is not installed; terminal preference preserved.")
     print("\nInstalled per-user ROS themes, icons, Power Tree source and Designs app.")
     print("Existing panel applet layout was deliberately preserved.")
     print("No autologin or user accounts were changed.")
@@ -177,7 +183,7 @@ def main():
     elif args.apply:
         apply()
     else:
-        print("ROS Desktop Installer 1.0 — DRY RUN")
+        print("ROS Desktop Installer 1.1 — DRY RUN")
         print("Target account:", os.environ.get("USER", "<current user>"))
         for src, dst in ROUTES:
             source = asset_path(src)
