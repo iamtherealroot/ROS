@@ -1,7 +1,7 @@
 {
   "uuid": "ros-menu@iamtherealroot",
   "name": "ROS Menu",
-  "description": "ROS Startmenü: linksbündige Anwendungsliste und farblich differenzierte Sitzungsschaltflächen",
-  "version": "1.4.0-preview",
+  "description": "ROS-Startmenü mit zweispaltigen App-Kacheln und vier gleichmäßig breiten Systembuttons",
+  "version": "1.5.0-preview",
   "max-instances": 1
 }
