@@ -271,7 +271,6 @@ class ROSMenu extends Applet.TextIconApplet {
                 label.set_width(155);
                 contents.add_child(label);
                 tile.set_child(contents);
-                tile.set_tooltip_text(name);
                 tile.connect('clicked', () => this._launch(app));
                 gridRow.add_child(tile);
             }
