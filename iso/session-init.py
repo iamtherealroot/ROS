@@ -27,6 +27,20 @@ def main():
         if setting("org.cinnamon.theme", "name", "ROS-Dark").returncode:
             return
     setting("org.cinnamon.desktop.interface", "icon-theme", "ROS-Icons")
+    # First-session wallpaper; existing accounts with a completion marker are untouched.
+    selected = current.stdout.strip().strip("\'\\"")
+    if selected not in THEMES:
+        selected = "ROS-Dark"
+    suffix = selected.removeprefix("ROS-")
+    extension = "png" if suffix == "Dark" else "jpg"
+    wallpaper = HOME / ".local/share/backgrounds/ros" / f"ROS-{suffix}.{extension}"
+    if wallpaper.is_file():
+        setting("org.cinnamon.desktop.background", "picture-uri", wallpaper.as_uri())
+        setting("org.cinnamon.desktop.background", "picture-options", "zoom")
+    theme_cli = HOME / ".local/bin/ros-theme"
+    if theme_cli.is_file():
+        subprocess.run(["/bin/bash", str(theme_cli), "apply", suffix],
+                       check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if HELPER.is_file():
         subprocess.run(["/usr/bin/python3", str(HELPER), "--apply"], check=False)
 
