@@ -154,8 +154,10 @@ class ROSMenu extends Applet.TextIconApplet {
             reactive: true, can_focus: true, track_hover: true,
             style: 'padding: 9px 12px; background-color: #213328; color: #ffffff; border-radius: 7px;'
         });
-        reboot.set_child(this._makeIcon('view-refresh-symbolic', 18));
-        reboot.set_tooltip_text('Neustarten');
+        const rebootContent = new St.BoxLayout({vertical: false, style: 'spacing: 7px;'});
+        rebootContent.add_child(this._makeIcon('view-refresh-symbolic', 17));
+        rebootContent.add_child(new St.Label({text: 'Neustart', y_align: 2, style: 'color: #ffffff;'}));
+        reboot.set_child(rebootContent);
         reboot.connect('clicked', () => {
             this.menu.close();
             Util.spawnCommandLine('cinnamon-session-quit --reboot');
