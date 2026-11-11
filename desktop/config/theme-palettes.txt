@@ -1,0 +1,7 @@
+# ROS theme variants. The existing ROS-Dark theme and the Power Tree remain untouched.
+# Slug|display|accent|panel|background|hover|foreground|GTK preference
+Gaming|ROS Gaming|#B18CFF|#24163B|#110D1B|#45265D|#D9C6FF|Mint-Y-Dark
+IT|ROS IT|#59E3E7|#0C3135|#07181A|#174851|#B9F9F7|Mint-Y-Dark
+Creator|ROS Creator|#F5BE67|#382714|#1B140C|#664325|#FFE3B6|Mint-Y-Dark
+Stealth|ROS Stealth|#A2C1B2|#252E2B|#0B1110|#38473F|#E0EBE5|Mint-Y-Dark
+Nordic|ROS Nordic|#8ABFFF|#172A40|#0A1422|#274766|#D9EAFF|Mint-Y-Dark
