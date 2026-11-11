@@ -29,6 +29,28 @@ DEFAULT_PINS = [
 ]
 THEMES = {"ROS-Dark", "ROS-Gaming", "ROS-IT", "ROS-Creator", "ROS-Stealth", "ROS-Nordic"}
 
+# Verified on a clean Linux Mint 22.3 Cinnamon 6.6.9 test account.
+# Exact list, including order and instance IDs: do not treat a merely saved
+# dconf value as customization if it equals this factory baseline.
+MINT_223_STOCK_APPLETS = [
+    "panel1:left:0:menu@cinnamon.org:0",
+    "panel1:left:1:separator@cinnamon.org:1",
+    "panel1:left:2:grouped-window-list@cinnamon.org:2",
+    "panel1:right:0:systray@cinnamon.org:3",
+    "panel1:right:1:xapp-status@cinnamon.org:4",
+    "panel1:right:2:notifications@cinnamon.org:5",
+    "panel1:right:3:printers@cinnamon.org:6",
+    "panel1:right:4:removable-drives@cinnamon.org:7",
+    "panel1:right:5:keyboard@cinnamon.org:8",
+    "panel1:right:6:favorites@cinnamon.org:9",
+    "panel1:right:7:network@cinnamon.org:10",
+    "panel1:right:8:sound@cinnamon.org:11",
+    "panel1:right:9:power@cinnamon.org:12",
+    "panel1:right:10:calendar@cinnamon.org:13",
+    "panel1:right:11:cornerbar@cinnamon.org:14"
+]
+
+
 def run(*argv):
     return subprocess.run(argv, text=True, capture_output=True)
 
@@ -60,10 +82,16 @@ def discover():
     return applets, custom_applets, pin_info, pins
 
 def prepare_panel(applets, custom):
-    if custom:
-        return None, "Custom panel already saved; preserving it"
     if any(TREE_UUID in x for x in applets):
         return None, "Power Tree already active"
+    # Cinnamon writes its stock panel to dconf at first graphical login.
+    # Only accept the verified exact stock list or an actually unset key.
+    if custom and applets != MINT_223_STOCK_APPLETS:
+        return None, "Customized/unknown panel; preserving it"
+    if applets == MINT_223_STOCK_APPLETS:
+        baseline_note = "Verified Mint 22.3 stock panel"
+    else:
+        baseline_note = "Unsaved Cinnamon panel defaults"
     native = next((x for x in applets if "power@cinnamon.org:" in x), None)
     if native is None:
         return None, "No native power applet; preserving panel"
@@ -77,7 +105,7 @@ def prepare_panel(applets, custom):
         except (ValueError, IndexError):
             pass
     replacement = ":".join(parts[:3] + [TREE_UUID, str(max(used, default=0) + 1)])
-    return [replacement if item == native else item for item in applets], "Replace stock battery with ROS Power Tree"
+    return [replacement if item == native else item for item in applets], f"{baseline_note}: replace native battery with ROS Power Tree"
 
 def prepare_pins(data, pins):
     if data is None:
@@ -103,7 +131,7 @@ def main():
     pin_data, pin_note = prepare_pins(data, pins)
     theme = run("gsettings", "get", "org.cinnamon.theme", "name")
     name = theme.stdout.strip().strip("\"'") if theme.returncode == 0 else ""
-    print("ROS first-login 1.2 —", "APPLY" if args.apply else "DRY RUN")
+    print("ROS first-login 1.2.1 —", "APPLY" if args.apply else "DRY RUN")
     print("User:", os.getuid(), HOME)
     print("Cinnamon theme:", name or "unknown")
     print("Panel:", panel_note)
@@ -138,7 +166,7 @@ def main():
         manifest["changed_pins"] = True
     (backup / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     MARKER.parent.mkdir(parents=True, exist_ok=True)
-    MARKER.write_text(json.dumps({"version": "1.2", "backup": str(backup)}, indent=2) + "\n")
+    MARKER.write_text(json.dumps({"version": "1.2.1", "backup": str(backup)}, indent=2) + "\n")
     print("Applied. Backup:", backup)
     print("Log out and back into Cinnamon to verify the panel.")
 
