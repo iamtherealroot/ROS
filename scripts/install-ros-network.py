@@ -55,6 +55,23 @@ def install():
     print("Installed applet files. Panel not changed.")
     print("Next: python3 scripts/install-ros-network.py --activate")
 
+def update():
+    if TARGET.is_symlink() or not TARGET.is_dir():
+        raise RuntimeError("ROS Network is not installed")
+    current = applets()
+    if any(uuid_of(a) == UUID for a in current):
+        raise RuntimeError("Deactivate the ROS Network applet before updating its files")
+    for filename in ("applet.js", "metadata.json", "connected.svg", "disconnected.svg"):
+        if not (SOURCE / filename).is_file() or (SOURCE / filename).is_symlink():
+            raise RuntimeError("Invalid source: " + filename)
+    BACKUPS.mkdir(parents=True, exist_ok=True)
+    backup = BACKUPS / ("ros-network-files-" + datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
+    shutil.copytree(TARGET, backup)
+    for filename in ("applet.js", "metadata.json", "connected.svg", "disconnected.svg"):
+        shutil.copy2(SOURCE / filename, TARGET / filename)
+    print("ROS Network files updated. Previous version:", backup)
+
+
 def activate():
     if not (TARGET / "applet.js").is_file():
         raise RuntimeError("Applet not installed; first use --install")
@@ -96,12 +113,15 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--install", action="store_true")
     group.add_argument("--activate", action="store_true")
+    group.add_argument("--update", action="store_true")
     group.add_argument("--restore", type=Path)
     args = parser.parse_args()
     if args.install:
         install()
     elif args.activate:
         activate()
+    elif args.update:
+        update()
     else:
         restore(args.restore)
 
