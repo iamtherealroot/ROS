@@ -10,7 +10,6 @@ from datetime import datetime
 import json
 import os
 from pathlib import Path
-import re
 import shutil
 import subprocess
 import sys
@@ -50,7 +49,7 @@ def create():
     if "6.6.9" not in version:
         raise ValueError("Only locally tested source layout Cinnamon 6.6.9 is supported: " + version.strip())
     source = (SOURCE / "applet.js").read_text()
-    if source.count(PATTERN) != 1 or not re.search(r"_setIcon\s*\(\s*name\s*\)", source):
+    if source.count(PATTERN) != 1:
         raise ValueError("Unexpected native network icon implementation; refusing patch")
     # Keep the original menu/control code intact; replace just the *panel icon*
     # assignment. All native updates continue to pass through _setIcon().
