@@ -1,7 +1,7 @@
 {
   "uuid": "ros-menu@iamtherealroot",
   "name": "ROS Menu",
-  "description": "ROS-Startmenü mit zweispaltigen App-Kacheln und vier gleichmäßig breiten Systembuttons",
-  "version": "1.5.0-preview",
+  "description": "ROS Startmenü mit zweispaltigen Glas-Kacheln über die volle Listenbreite und vier farbigen Systembuttons",
+  "version": "1.5.2-preview",
   "max-instances": 1
 }
