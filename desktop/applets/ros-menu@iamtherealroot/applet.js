@@ -1,4 +1,4 @@
-/* ROS Menu 1.5.3 preview — Cinnamon 6.6, aligned launcher. */
+/* ROS Menu 1.5.4 preview — Cinnamon 6.6, aligned launcher. */
 const Applet = imports.ui.applet;
 const PopupMenu = imports.ui.popupMenu;
 const Util = imports.misc.util;
@@ -142,6 +142,8 @@ class ROSMenu extends Applet.TextIconApplet {
             style: 'width: 465px; min-height: 145px; max-height: 190px;',
             x_fill: true, y_fill: true
         });
+        // Keep mouse-wheel/touch scrolling while hiding both scrollbar tracks.
+        scroll.set_policy(St.PolicyType.NEVER, St.PolicyType.NEVER);
         this._appList = new St.BoxLayout({
             vertical: true, x_expand: false, x_align: Clutter.ActorAlign.START,
             style: 'width: 450px; spacing: 5px;'
@@ -295,7 +297,7 @@ class ROSMenu extends Applet.TextIconApplet {
                 const tile = new St.Button({
                     reactive: true, can_focus: true, track_hover: true,
                     x_align: Clutter.ActorAlign.START,
-                    style: 'width: 221px; padding: 9px 9px; border-radius: 8px; background-color: rgba(210, 255, 224, 0.08); border: 1px solid rgba(155, 232, 179, 0.22); color: #f3fff6;'
+                    style: 'width: 200px; padding: 8px 8px; border-radius: 7px; background-color: rgba(210, 255, 224, 0.055); color: #f3fff6;'
                 });
                 const contents = new St.BoxLayout({
                     vertical: false, x_align: Clutter.ActorAlign.START,
@@ -311,7 +313,7 @@ class ROSMenu extends Applet.TextIconApplet {
                     style: 'color: #f3fff6;'
                 });
                 label.clutter_text.set_ellipsize(Pango.EllipsizeMode.END);
-                label.set_width(156);
+                label.set_width(147);
                 contents.add_child(label);
                 tile.set_child(contents);
                 tile.connect('clicked', () => this._launch(app));
