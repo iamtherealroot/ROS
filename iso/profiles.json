@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "edition": "ROS 0.1 ISO Preview",
+  "base": "Linux Mint 22.3 Cinnamon x86_64",
+  "offline_required": true,
+  "install_paths": [
+    {
+      "id": "simple",
+      "label": "Vereinfachte Installation"
+    },
+    {
+      "id": "expert",
+      "label": "Experteninstallation"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "minimal",
+      "label": "Minimale Installation",
+      "base": true,
+      "packages": [
+        "firefox",
+        "libreoffice",
+        "timeshift",
+        "terminator"
+      ],
+      "modules": [
+        "ROS Desktop",
+        "ROS Welcome",
+        "ROS Have-To",
+        "Bitwarden"
+      ],
+      "notes": "Bitwarden/ROS Welcome/ROS Have-To packages and offline bundling pending verification"
+    },
+    {
+      "id": "it",
+      "label": "IT",
+      "inherits": [
+        "minimal"
+      ],
+      "packages": [
+        "wireguard",
+        "wireshark",
+        "openssh-client",
+        "openssh-server",
+        "git",
+        "gh",
+        "qemu-system-x86",
+        "virt-manager"
+      ],
+      "modules": []
+    },
+    {
+      "id": "gaming",
+      "label": "Gaming",
+      "inherits": [
+        "minimal"
+      ],
+      "packages": [
+        "steam-installer",
+        "gamemode",
+        "wine",
+        "winetricks",
+        "vulkan-tools"
+      ],
+      "modules": [
+        "Heroic Games Launcher",
+        "Ubisoft integration",
+        "32-bit Vulkan libraries"
+      ],
+      "notes": "Heroic/Ubisoft/graphics dependency versions require staged offline packages and testing"
+    },
+    {
+      "id": "complete",
+      "label": "Gesamte Installation",
+      "inherits": [
+        "it",
+        "gaming"
+      ],
+      "packages": [],
+      "modules": []
+    }
+  ],
+  "status": "planning-manifest-only",
+  "installable_offline": false
+}
