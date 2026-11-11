@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=ROS First Login
+Comment=Set up an uncustomized ROS Cinnamon user profile once
+Exec=@ROS_FIRST_LOGIN_EXEC@
+OnlyShowIn=X-Cinnamon;
+NoDisplay=true
+Terminal=false
+X-GNOME-Autostart-enabled=true
