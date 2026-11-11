@@ -1,4 +1,4 @@
-/* ROS Menu 1.5.2 preview — Cinnamon 6.6, aligned launcher. */
+/* ROS Menu 1.5.3 preview — Cinnamon 6.6, aligned launcher. */
 const Applet = imports.ui.applet;
 const PopupMenu = imports.ui.popupMenu;
 const Util = imports.misc.util;
@@ -6,6 +6,7 @@ const Gio = imports.gi.Gio;
 const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
 const Pango = imports.gi.Pango;
+const GLib = imports.gi.GLib;
 
 const SECTIONS = [
     ['Alle Programme', null, 'view-grid-symbolic'],
@@ -27,6 +28,7 @@ class ROSMenu extends Applet.TextIconApplet {
         this._apps = [];
         this._maxRows = 120;
         this._categoryButtons = [];
+        this._categoryChangedAt = 0;
         this.set_applet_tooltip('ROS Menu — Sei wie Root!');
         this.set_applet_icon_path(metadata.path + '/tree.svg');
         this.set_applet_label('');
@@ -107,9 +109,14 @@ class ROSMenu extends Applet.TextIconApplet {
                 contents.add_child(new St.Label({text: title, y_align: 2, style: 'color: #ffffff;'}));
                 button.set_child(contents);
                 button.connect('clicked', () => {
+                    // Do not start apps when the category grid is clicked.
+                    // Guard against input falling through while tiles are rebuilt.
+                    this._categoryChangedAt = GLib.get_monotonic_time();
                     this._category = category;
-                    this._search.set_text('');
-                    this._showApps();
+                    if (this._search.get_text() !== '')
+                        this._search.set_text('');
+                    else
+                        this._showApps();
                 });
                 row.add_child(button);
                 this._categoryButtons.push([category, button]);
@@ -198,12 +205,48 @@ class ROSMenu extends Applet.TextIconApplet {
     }
 
     _launch(app) {
+        // Some Cinnamon popup event paths can deliver a click to a freshly
+        // rebuilt application tile immediately after choosing a category.
+        // A deliberate second click still launches the chosen application.
+        if (GLib.get_monotonic_time() - this._categoryChangedAt < 450000)
+            return;
         this.menu.close();
         try {
             app.launch([], null);
         } catch (e) {
             global.logError(e);
         }
+    }
+
+    _appCategories(app) {
+        // Gio.AppInfo.get_all() can return Gio.AppInfo implementations with
+        // no get_categories(). Obtain freedesktop categories from the desktop
+        // launcher when possible. Never infer categories from displayed names.
+        try {
+            if (typeof app.get_categories === 'function')
+                return (app.get_categories() || '').split(';').filter(Boolean);
+            const id = app.get_id();
+            const desktop = id ? Gio.DesktopAppInfo.new(id) : null;
+            if (desktop)
+                return (desktop.get_categories() || '').split(';').filter(Boolean);
+        } catch (e) {
+            global.logError(e);
+        }
+        return [];
+    }
+
+    _matchesCategory(categories, selected) {
+        const aliases = {
+            'Network': ['Network', 'WebBrowser', 'Email', 'InstantMessaging'],
+            'Office': ['Office'],
+            'Development': ['Development', 'IDE', 'GUIDesigner'],
+            'Graphics': ['Graphics', 'Photography', '2DGraphics', '3DGraphics'],
+            'AudioVideo': ['AudioVideo', 'Audio', 'Video', 'Player', 'Recorder'],
+            'Game': ['Game'],
+            'System': ['System', 'Settings', 'Security'],
+            'Utility': ['Utility', 'Accessories', 'Calculator', 'TextEditor']
+        };
+        return (aliases[selected] || [selected]).some(tag => categories.includes(tag));
     }
 
     _showApps() {
@@ -226,8 +269,8 @@ class ROSMenu extends Applet.TextIconApplet {
         const visible = this._apps.filter(app => {
             const name = app.get_display_name() || '';
             const description = app.get_description() || '';
-            const categories = (app.get_categories && app.get_categories()) || '';
-            if (!term && this._category && !categories.split(';').includes(this._category))
+            const categories = this._appCategories(app);
+            if (!term && this._category && !this._matchesCategory(categories, this._category))
                 return false;
             return !term || name.toLocaleLowerCase().includes(term) ||
                 description.toLocaleLowerCase().includes(term);
