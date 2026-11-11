@@ -1,4 +1,4 @@
-/* ROS Menu 1.5.4 preview — Cinnamon 6.6, aligned launcher. */
+/* ROS Menu 1.5.5 preview — Cinnamon 6.6, aligned launcher. */
 const Applet = imports.ui.applet;
 const PopupMenu = imports.ui.popupMenu;
 const Util = imports.misc.util;
@@ -29,6 +29,8 @@ class ROSMenu extends Applet.TextIconApplet {
         this._maxRows = 120;
         this._categoryButtons = [];
         this._categoryChangedAt = 0;
+        this._categoryRefreshId = 0;
+        this._suspendSearchRefresh = false;
         this.set_applet_tooltip('ROS Menu — Sei wie Root!');
         this.set_applet_icon_path(metadata.path + '/tree.svg');
         this.set_applet_label('');
@@ -65,7 +67,10 @@ class ROSMenu extends Applet.TextIconApplet {
         });
         searchRow.addActor(this._search);
         this.menu.addMenuItem(searchRow);
-        this._search.get_clutter_text().connect('text-changed', () => this._showApps());
+        this._search.get_clutter_text().connect('text-changed', () => {
+            if (!this._suspendSearchRefresh)
+                this._showApps();
+        });
 
         // Favorites are always visible as compact, one-click shortcuts.
         const favoriteRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
@@ -109,14 +114,28 @@ class ROSMenu extends Applet.TextIconApplet {
                 contents.add_child(new St.Label({text: title, y_align: 2, style: 'color: #ffffff;'}));
                 button.set_child(contents);
                 button.connect('clicked', () => {
-                    // Do not start apps when the category grid is clicked.
-                    // Guard against input falling through while tiles are rebuilt.
+                    // Don't create new application buttons during the same
+                    // pointer-click sequence. It previously launched unrelated
+                    // programs (Calculator / Bluetooth) on category selection.
                     this._categoryChangedAt = GLib.get_monotonic_time();
                     this._category = category;
-                    if (this._search.get_text() !== '')
-                        this._search.set_text('');
-                    else
-                        this._showApps();
+                    if (this._categoryRefreshId) {
+                        GLib.source_remove(this._categoryRefreshId);
+                        this._categoryRefreshId = 0;
+                    }
+                    this._suspendSearchRefresh = true;
+                    this._search.set_text('');
+                    this._suspendSearchRefresh = false;
+                    for (const child of this._appList.get_children())
+                        child.destroy();
+                    this._resultsTitle.text = title;
+                    this._categoryRefreshId = GLib.timeout_add(
+                        GLib.PRIORITY_DEFAULT, 350, () => {
+                            this._categoryRefreshId = 0;
+                            this._showApps();
+                            return GLib.SOURCE_REMOVE;
+                        }
+                    );
                 });
                 row.add_child(button);
                 this._categoryButtons.push([category, button]);
@@ -128,10 +147,11 @@ class ROSMenu extends Applet.TextIconApplet {
 
         // Full-width list of programs; the search remains visible above.
         const resultsRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
-        resultsRow.actor.style = 'padding-left: 0px;';
+        // Retain Cinnamon's normal left padding: align the grid with the search
+        // and the footer rather than the menu's outside border.
         const resultsBox = new St.BoxLayout({
             vertical: true, x_align: Clutter.ActorAlign.START,
-            style: 'width: 458px; padding: 0 2px;'
+            style: 'width: 485px; padding: 0 2px;'
         });
         this._resultsTitle = new St.Label({
             text: 'Alle Programme',
@@ -139,14 +159,14 @@ class ROSMenu extends Applet.TextIconApplet {
         });
         resultsBox.add_child(this._resultsTitle);
         const scroll = new St.ScrollView({
-            style: 'width: 465px; min-height: 145px; max-height: 190px;',
+            style: 'width: 485px; min-height: 145px; max-height: 190px;',
             x_fill: true, y_fill: true
         });
         // Keep mouse-wheel/touch scrolling while hiding both scrollbar tracks.
         scroll.set_policy(St.PolicyType.NEVER, St.PolicyType.NEVER);
         this._appList = new St.BoxLayout({
             vertical: true, x_expand: false, x_align: Clutter.ActorAlign.START,
-            style: 'width: 450px; spacing: 5px;'
+            style: 'width: 480px; spacing: 5px;'
         });
         scroll.add_actor(this._appList);
         resultsBox.add_child(scroll);
@@ -210,7 +230,7 @@ class ROSMenu extends Applet.TextIconApplet {
         // Some Cinnamon popup event paths can deliver a click to a freshly
         // rebuilt application tile immediately after choosing a category.
         // A deliberate second click still launches the chosen application.
-        if (GLib.get_monotonic_time() - this._categoryChangedAt < 450000)
+        if (GLib.get_monotonic_time() - this._categoryChangedAt < 1100000)
             return;
         this.menu.close();
         try {
@@ -254,6 +274,8 @@ class ROSMenu extends Applet.TextIconApplet {
     _showApps() {
         if (!this._appList)
             return;
+        if (this._categoryRefreshId)
+            return;
         for (const child of this._appList.get_children())
             child.destroy();
 
@@ -290,14 +312,14 @@ class ROSMenu extends Applet.TextIconApplet {
             const gridRow = new St.BoxLayout({
                 vertical: false,
                 x_align: Clutter.ActorAlign.START,
-                style: 'width: 450px; spacing: 8px;'
+                style: 'width: 480px; spacing: 8px;'
             });
             for (const app of visible.slice(i, i + 2)) {
                 const name = app.get_display_name() || '';
                 const tile = new St.Button({
                     reactive: true, can_focus: true, track_hover: true,
                     x_align: Clutter.ActorAlign.START,
-                    style: 'width: 200px; padding: 8px 8px; border-radius: 7px; background-color: rgba(210, 255, 224, 0.055); color: #f3fff6;'
+                    style: 'width: 218px; padding: 8px 8px; border-radius: 7px; border: none; box-shadow: none; background-color: rgba(210, 255, 224, 0.045); color: #f3fff6;'
                 });
                 const contents = new St.BoxLayout({
                     vertical: false, x_align: Clutter.ActorAlign.START,
@@ -313,13 +335,20 @@ class ROSMenu extends Applet.TextIconApplet {
                     style: 'color: #f3fff6;'
                 });
                 label.clutter_text.set_ellipsize(Pango.EllipsizeMode.END);
-                label.set_width(147);
+                label.set_width(159);
                 contents.add_child(label);
                 tile.set_child(contents);
                 tile.connect('clicked', () => this._launch(app));
                 gridRow.add_child(tile);
             }
             this._appList.add_child(gridRow);
+        }
+    }
+
+    on_applet_removed_from_panel() {
+        if (this._categoryRefreshId) {
+            GLib.source_remove(this._categoryRefreshId);
+            this._categoryRefreshId = 0;
         }
     }
 
