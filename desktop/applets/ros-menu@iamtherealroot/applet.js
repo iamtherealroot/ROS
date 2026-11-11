@@ -148,7 +148,7 @@ class ROSMenu extends Applet.TextIconApplet {
 
         const powerRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
         const powerBox = new St.BoxLayout({
-            vertical: false, homogeneous: true,
+            vertical: false,
             x_expand: true, x_align: Clutter.ActorAlign.FILL,
             style: 'width: 465px; spacing: 6px; padding: 3px 0px 2px 0px;'
         });
@@ -160,8 +160,8 @@ class ROSMenu extends Applet.TextIconApplet {
         ]) {
             const button = new St.Button({
                 reactive: true, can_focus: true, track_hover: true,
-                x_expand: true, x_align: Clutter.ActorAlign.FILL,
-                style: 'padding: 9px 5px; border-radius: 6px; background-color: ' + background + '; color: ' + foreground + ';'
+                x_expand: false, x_align: Clutter.ActorAlign.START,
+                style: 'width: 108px; padding: 9px 3px; border-radius: 6px; background-color: ' + background + '; color: ' + foreground + ';'
             });
             const contents = new St.BoxLayout({
                 vertical: false, x_align: Clutter.ActorAlign.CENTER,
