@@ -1,4 +1,4 @@
-# ROS Desktop Installer 1.3 — gestufte Einrichtung
+# ROS Desktop Installer 1.3.1 — gestufte Einrichtung
 
 Branch: `develop`. Unterstützt **Linux Mint 22.3, Cinnamon 6.6.9**.
 Für den angemeldeten Benutzer, **ohne `sudo`**.
@@ -32,8 +32,7 @@ Für ältere Menüversionen den bisherigen sicheren Workflow mit
   die Quelle ist Cinnamon 6.6.9. Bestehende native Netzwerkdateien bleiben
   erhalten.
 - Vor Aktivierung Panel-IDs prüfen und **nur** Menü- und Netzwerk-Applet
-  umstellen. Power Tree wird nicht gewaltsam in ein angepasstes Panel
-  eingefügt. Doppelte bisherige Netzwerkanzeigen können entfernt werden.
+  umstellen. Power Tree wird, wenn noch nicht vorhanden, anstelle des Standard-\n  Power-Applets aktiviert. Fehlt das Standard-Applet, wird Power Tree\n  rechts neben dem Soundsymbol ergänzt, ohne andere Applet-IDs zu ändern. Doppelte bisherige Netzwerkanzeigen können entfernt werden.
 - Komplettes Panel vor Änderungen sichern und nach Möglichkeit
   über `--restore-panel` zurücksetzen. Wiederherstellung verweigert
   das Überschreiben zwischenzeitlicher Panel-Änderungen.
@@ -75,9 +74,7 @@ Danach grafisch ab- und wieder anmelden und prüfen:
 python3 scripts/audit-ros-desktop.py
 ```
 
-Bei fehlendem ROS Power Tree in einem bereits angepassten Panel bleibt
-die individuelle Panel-Konfiguration absichtlich unangetastet; der Audit
-weist auf den fehlenden Eintrag hin.
+Ist ROS Power Tree noch nicht aktiv, ergänzt \`--activate\` das Applet\n  vorsichtig und legt zuvor ein Panel-Backup an. Ist kein eindeutiger\n  Einfügepunkt vorhanden, bricht es ohne Panel-Änderung ab.\n\n  **Nachtrag 1.3.1:** Bei bereits installiertem Menü und Netzwerk, aber\n  fehlendem Power Tree, genügt \`python3 scripts/install-ros-desktop-1.3.py --activate\`.\n  \`--stage\` muss nicht erneut ausgeführt werden.\n\n  Die LightDM-WARN-Wertung auf frischen Installationen bleibt vorerst\n  korrekt: Die systemweite ROS-Login-Konfiguration gehört noch nicht\n  zur per-user Installation.
 
 ## Rücksetzen
 
