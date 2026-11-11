@@ -1,7 +1,7 @@
 {
   "uuid": "ros-menu@iamtherealroot",
   "name": "ROS Menu",
-  "description": "Eigenes ROS-Startmenü mit zweispaltigem Layout, Anwendungssuche, Kategorien, Favoriten und Systemaktionen.",
-  "version": "1.1.0-preview",
+  "description": "ROS-Startmenü mit direktem Schnellzugriff, lesbarer Programmliste, Kategorien und sichtbaren Systemaktionen",
+  "version": "1.2.0-preview",
   "max-instances": 1
 }
