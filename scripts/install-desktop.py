@@ -110,9 +110,8 @@ def copy_asset(source, dest):
             escaped = str(script_path).replace("\\", "\\\\").replace('"', '\\"')
             exec_line = '/usr/bin/python3 "' + escaped + '" --apply'
             template = dest.read_text()
-            if "@ROS_FIRST_LOGIN_EXEC@" not in template:
-                raise ValueError("Invalid ROS first-login autostart template")
-            dest.write_text(template.replace("@ROS_FIRST_LOGIN_EXEC@", exec_line))
+            if "@ROS_FIRST_LOGIN_EXEC@" in template:
+                dest.write_text(template.replace("@ROS_FIRST_LOGIN_EXEC@", exec_line))
         if dest.name in ("ros-designs", "ros-theme"):
             dest.chmod(dest.stat().st_mode | 0o111)
 
