@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=ROS session initialization
+Comment=Configure the default ROS desktop for new Cinnamon users
+Exec=/usr/bin/python3 /usr/local/lib/ros/session-init.py
+OnlyShowIn=X-Cinnamon;
+NoDisplay=true
+Terminal=false
+X-GNOME-Autostart-enabled=true
