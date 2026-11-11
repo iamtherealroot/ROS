@@ -83,10 +83,36 @@ def main():
     icons = command("gsettings", "get", "org.cinnamon.desktop.interface", "icon-theme")
     output("PASS" if theme and "ROS-" in theme else "WARN", f"Current Cinnamon theme: {theme or 'unknown'}")
     output("PASS" if icons and "ROS-Icons" in icons else "WARN", f"Icon theme: {icons or 'unknown'}")
+    # lightdm --show-config can require privileges to access effective config.
+    # Check the ROS drop-in directly as a readable fallback, without sudo.
     lightdm = command("lightdm", "--show-config")
     greeter = bool(lightdm and "greeter-session=lightdm-gtk-greeter" in lightdm)
-    output("PASS" if greeter else "WARN", "ROS-compatible GTK LightDM greeter configured"
-           if greeter else "Cannot confirm GTK LightDM greeter configuration")
+    greeter_source = "effective LightDM configuration"
+    if not greeter:
+        ros_dropin = Path("/etc/lightdm/lightdm.conf.d/90-ros.conf")
+        try:
+            lines = ros_dropin.read_text().splitlines()
+            current_section = None
+            for line in lines:
+                line = line.strip()
+                if not line or line.startswith(("#", ";")):
+                    continue
+                if line.startswith("[") and line.endswith("]"):
+                    current_section = line
+                elif current_section == "[Seat:*]" and "=" in line:
+                    key, value = (part.strip() for part in line.split("=", 1))
+                    if key == "greeter-session" and value == "lightdm-gtk-greeter":
+                        greeter = True
+                        greeter_source = str(ros_dropin) + " (drop-in only)"
+        except OSError:
+            pass
+    login_config = Path("/etc/lightdm/lightdm-gtk-greeter.conf")
+    login_background = Path("/usr/share/backgrounds/ros/login.png")
+    if greeter and login_config.is_file() and login_background.is_file():
+        output("PASS", "ROS LightDM GTK greeter configured: " + greeter_source)
+        output("PASS", "ROS greeter config and login.png available")
+    else:
+        output("WARN", "Cannot fully confirm ROS LightDM login configuration")
     print()
     print("Read-only audit finished. WARN is a review item, not necessarily a failure.")
     print("Confirm actual menu category clicks and network status visually before deployment.")
