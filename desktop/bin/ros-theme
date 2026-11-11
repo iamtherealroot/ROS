@@ -7,9 +7,9 @@ list(){ echo 'Dark|ROS Dark (Standard)'; grep -v '^#' "$PALETTES" | cut -d'|' -f
 apply(){
   local selected="$1" gtk wall
   if [[ "$selected" == 'Dark' ]]; then
-    gtk='Mint-Y-Dark'; wall='file:///usr/share/backgrounds/ros/wallpaper.png'
-    if [[ ! -e /usr/share/backgrounds/ros/wallpaper.png ]]; then
-      echo "Hinweis: ROS-Dark-Wallpaper ist nicht unter /usr/share/backgrounds/ros/wallpaper.png vorhanden. Hintergrund bleibt unverändert."
+    gtk='Mint-Y-Dark'; wall="file://$HOME/.local/share/backgrounds/ros/ROS-Dark.png"
+    if [[ ! -e "$HOME/.local/share/backgrounds/ros/ROS-Dark.png" ]]; then
+      echo "Hinweis: ROS-Dark-Wallpaper fehlt. Hintergrund bleibt unverändert."
       wall=''
     fi
   else
