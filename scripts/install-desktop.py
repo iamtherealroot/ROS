@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ROS Desktop Installer 1.1 (per-user only).
+"""ROS Desktop Installer 1.2 (per-user only).
 
 Default mode prints a plan. --apply installs ROS desktop assets with backup.
 --restore BACKUP_DIR restores only paths and GSettings values that were managed.
@@ -28,6 +28,8 @@ ROUTES = [
     ("apps/designs/designs.desktop", ".local/share/applications/ros-theme-selector.desktop"),
     ("desktop/bin/ros-theme", ".local/bin/ros-theme"),
     ("desktop/applications/ros-terminal.desktop", ".local/share/applications/ros-terminal.desktop"),
+    ("scripts/configure-first-login.py", ".local/share/ros/first-login/configure-first-login.py"),
+    ("desktop/autostart/ros-first-login.desktop", ".config/autostart/ros-first-login.desktop"),
     ("desktop/config/theme-palettes.txt", ".config/ros/theme-palettes.txt"),
 ] + [
     ("desktop/backgrounds/ROS-" + t + (".png" if t == "Dark" else ".jpg"),
@@ -103,6 +105,14 @@ def copy_asset(source, dest):
         shutil.copytree(source, dest)
     else:
         shutil.copy2(source, dest)
+        if dest.name == "ros-first-login.desktop":
+            script_path = HOME / ".local/share/ros/first-login/configure-first-login.py"
+            escaped = str(script_path).replace("\\", "\\\\").replace('"', '\\"')
+            exec_line = '/usr/bin/python3 "' + escaped + '" --apply'
+            template = dest.read_text()
+            if "@ROS_FIRST_LOGIN_EXEC@" not in template:
+                raise ValueError("Invalid ROS first-login autostart template")
+            dest.write_text(template.replace("@ROS_FIRST_LOGIN_EXEC@", exec_line))
         if dest.name in ("ros-designs", "ros-theme"):
             dest.chmod(dest.stat().st_mode | 0o111)
 
@@ -141,6 +151,8 @@ def apply():
         print("WARN: Terminator is not installed; terminal preference preserved.")
     print("\nInstalled per-user ROS themes, icons, Power Tree source and Designs app.")
     print("Existing panel applet layout was deliberately preserved.")
+    print("First-login configuration is scheduled for the next Cinnamon sign-in.")
+    print("The first-login helper protects customized user profiles.")
     print("No autologin or user accounts were changed.")
     print("Log out and log back into Cinnamon to refresh the theme.")
     print(f"Restore: python3 scripts/install-desktop.py --restore '{backup}'")
@@ -183,7 +195,7 @@ def main():
     elif args.apply:
         apply()
     else:
-        print("ROS Desktop Installer 1.1 — DRY RUN")
+        print("ROS Desktop Installer 1.2 — DRY RUN")
         print("Target account:", os.environ.get("USER", "<current user>"))
         for src, dst in ROUTES:
             source = asset_path(src)
