@@ -1,4 +1,4 @@
-/* ROS Menu 1.1 — Cinnamon 6.6 desktop applet. */
+/* ROS Menu 1.2 preview — Cinnamon 6.6 desktop applet. */
 const Applet = imports.ui.applet;
 const PopupMenu = imports.ui.popupMenu;
 const Util = imports.misc.util;
@@ -48,34 +48,56 @@ class ROSMenu extends Applet.TextIconApplet {
     }
 
     _build() {
-        this.menu.actor.style = 'background-color: #101d16; color: #eaf8ee; min-width: 640px;';
+        this.menu.actor.style = 'background-color: #101d16; color: #f0fff3; min-width: 640px;';
         this._heading('ROS  ·  Sei wie Root!');
 
         const searchRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
         this._search = new St.Entry({
-            hint_text: 'Anwendungen suchen …',
+            hint_text: 'Programm oder Einstellung suchen …',
             can_focus: true,
             track_hover: true,
-            style: 'width: 590px; padding: 9px; background-color: #203429; color: #f1fff4; border: 1px solid #416b51; border-radius: 7px;'
+            style: 'width: 592px; padding: 11px; background-color: #203429; color: #ffffff; border: 1px solid #5c9871; border-radius: 8px;'
         });
         searchRow.addActor(this._search);
         this.menu.addMenuItem(searchRow);
         this._search.get_clutter_text().connect('text-changed', () => this._showApps());
 
+        // The most-used applications are always visible, not hidden in a submenu.
+        const favoriteRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
+        const favoriteBox = new St.BoxLayout({vertical: false, style: 'spacing: 8px; padding: 5px 4px 11px 4px;'});
+        for (const [title, id, symbol] of [
+            ['Dateien', 'nemo.desktop', 'system-file-manager-symbolic'],
+            ['Firefox', 'firefox.desktop', 'web-browser-symbolic'],
+            ['Terminal', 'ros-terminal.desktop', 'utilities-terminal-symbolic']
+        ]) {
+            const button = new St.Button({
+                reactive: true, can_focus: true, track_hover: true,
+                style: 'padding: 8px 12px; background-color: #234631; color: #ffffff; border: 1px solid #47795a; border-radius: 7px;'
+            });
+            const content = new St.BoxLayout({vertical: false, style: 'spacing: 7px;'});
+            content.add_child(this._makeIcon(symbol, 18));
+            content.add_child(new St.Label({text: title, y_align: 2, style: 'color: #ffffff;'}));
+            button.set_child(content);
+            button.connect('clicked', () => this._launchId(id));
+            favoriteBox.add_child(button);
+        }
+        favoriteRow.addActor(favoriteBox);
+        this.menu.addMenuItem(favoriteRow);
+
         const contentRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
-        const columns = new St.BoxLayout({vertical: false, style: 'spacing: 12px; padding: 5px 6px;'});
+        const columns = new St.BoxLayout({vertical: false, style: 'spacing: 12px; padding: 3px 5px;'});
         const categories = new St.BoxLayout({
             vertical: true,
-            style: 'width: 180px; spacing: 2px; padding-right: 9px; border-right: 1px solid #416b51;'
+            style: 'width: 175px; spacing: 1px; padding-right: 8px; border-right: 1px solid #416b51;'
         });
         for (const [label, key, icon] of SECTIONS) {
             const button = new St.Button({
                 reactive: true, can_focus: true, track_hover: true,
-                style: 'padding: 8px 6px; border-radius: 6px;'
+                style: 'padding: 8px 7px; border-radius: 6px;'
             });
-            const inner = new St.BoxLayout({vertical: false, style: 'spacing: 8px;'});
+            const inner = new St.BoxLayout({vertical: false, style: 'spacing: 9px;'});
             inner.add_child(this._makeIcon(icon));
-            inner.add_child(new St.Label({text: label, y_align: 2}));
+            inner.add_child(new St.Label({text: label, y_align: 2, style: 'color: #f0fff3;'}));
             button.set_child(inner);
             button.connect('clicked', () => {
                 this._category = key;
@@ -87,16 +109,15 @@ class ROSMenu extends Applet.TextIconApplet {
         }
         columns.add_child(categories);
 
-        const right = new St.BoxLayout({vertical: true, style: 'width: 390px;'});
+        const right = new St.BoxLayout({vertical: true, style: 'width: 393px;'});
         this._resultsTitle = new St.Label({
             text: 'Alle Programme',
-            style: 'font-weight: bold; color: #98edb5; padding: 6px;'
+            style: 'font-weight: bold; color: #98edb5; padding: 7px;'
         });
         right.add_child(this._resultsTitle);
         const scroll = new St.ScrollView({
-            style: 'max-height: 390px; min-height: 270px; width: 390px;',
-            x_fill: true,
-            y_fill: true
+            style: 'max-height: 310px; min-height: 260px; width: 393px;',
+            x_fill: true, y_fill: true
         });
         this._appList = new St.BoxLayout({vertical: true, style: 'spacing: 2px;'});
         scroll.add_actor(this._appList);
@@ -106,28 +127,42 @@ class ROSMenu extends Applet.TextIconApplet {
         this.menu.addMenuItem(contentRow);
 
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-        const favorites = new PopupMenu.PopupSubMenuMenuItem('Favoriten');
-        this.menu.addMenuItem(favorites);
-        for (const id of FAVORITES) {
-            const item = new PopupMenu.PopupMenuItem(id.replace('.desktop', ''));
-            item.connect('activate', () => this._launchId(id));
-            favorites.menu.addMenuItem(item);
-        }
-        const session = new PopupMenu.PopupSubMenuMenuItem('Sitzung & Energie');
-        this.menu.addMenuItem(session);
-        for (const [title, command] of [
-            ['Bildschirm sperren', 'cinnamon-screensaver-command --lock'],
-            ['Abmelden', 'cinnamon-session-quit --logout'],
-            ['Neustarten', 'cinnamon-session-quit --reboot'],
-            ['Herunterfahren', 'cinnamon-session-quit --power-off']
+
+        // High-frequency system actions are single-click, always visible.
+        const powerRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
+        const powerBox = new St.BoxLayout({vertical: false, style: 'spacing: 9px; padding: 5px 4px 3px 4px;'});
+        for (const [title, icon, command] of [
+            ['Sperren', 'system-lock-screen-symbolic', 'cinnamon-screensaver-command --lock'],
+            ['Abmelden', 'system-log-out-symbolic', 'cinnamon-session-quit --logout'],
+            ['Ausschalten', 'system-shutdown-symbolic', 'cinnamon-session-quit --power-off']
         ]) {
-            const item = new PopupMenu.PopupMenuItem(title);
-            item.connect('activate', () => {
+            const button = new St.Button({
+                reactive: true, can_focus: true, track_hover: true,
+                style: 'padding: 9px 12px; background-color: #213328; color: #ffffff; border-radius: 7px;'
+            });
+            const content = new St.BoxLayout({vertical: false, style: 'spacing: 7px;'});
+            content.add_child(this._makeIcon(icon, 17));
+            content.add_child(new St.Label({text: title, y_align: 2, style: 'color: #ffffff;'}));
+            button.set_child(content);
+            button.connect('clicked', () => {
                 this.menu.close();
                 Util.spawnCommandLine(command);
             });
-            session.menu.addMenuItem(item);
+            powerBox.add_child(button);
         }
+        const reboot = new St.Button({
+            reactive: true, can_focus: true, track_hover: true,
+            style: 'padding: 9px 12px; background-color: #213328; color: #ffffff; border-radius: 7px;'
+        });
+        reboot.set_child(this._makeIcon('view-refresh-symbolic', 18));
+        reboot.set_tooltip_text('Neustarten');
+        reboot.connect('clicked', () => {
+            this.menu.close();
+            Util.spawnCommandLine('cinnamon-session-quit --reboot');
+        });
+        powerBox.add_child(reboot);
+        powerRow.addActor(powerBox);
+        this.menu.addMenuItem(powerRow);
     }
 
     _refreshApps() {
@@ -178,7 +213,7 @@ class ROSMenu extends Applet.TextIconApplet {
                 continue;
             const button = new St.Button({
                 reactive: true, can_focus: true, track_hover: true,
-                style: 'padding: 7px 8px; border-radius: 5px;'
+                style: 'padding: 7px 9px; border-radius: 5px; color: #ffffff;'
             });
             const row = new St.BoxLayout({vertical: false, style: 'spacing: 9px;'});
             const icon = app.get_icon();
@@ -186,7 +221,7 @@ class ROSMenu extends Applet.TextIconApplet {
                 row.add_child(new St.Icon({gicon: icon, icon_size: 20}));
             else
                 row.add_child(this._makeIcon('application-x-executable-symbolic', 20));
-            row.add_child(new St.Label({text: name, y_align: 2}));
+            row.add_child(new St.Label({text: name, y_align: 2, style: 'color: #f3fff6;'}));
             button.set_child(row);
             button.connect('clicked', () => this._launch(app));
             this._appList.add_child(button);
