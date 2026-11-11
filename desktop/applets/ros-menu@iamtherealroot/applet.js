@@ -1,4 +1,4 @@
-/* ROS Menu 1.2 preview — Cinnamon 6.6 desktop applet. */
+/* ROS Menu 1.2 preview — compact launcher, Cinnamon 6.6. */
 const Applet = imports.ui.applet;
 const PopupMenu = imports.ui.popupMenu;
 const Util = imports.misc.util;
@@ -48,121 +48,115 @@ class ROSMenu extends Applet.TextIconApplet {
     }
 
     _build() {
-        this.menu.actor.style = 'background-color: #101d16; color: #f0fff3; min-width: 640px;';
-        this._heading('ROS  ·  Sei wie Root!');
+        // Compact vertical launcher: search, shortcuts, categories, programs, power.
+        this.menu.actor.style = 'background-color: #101d16; color: #f0fff3; min-width: 515px;';
+        this._heading('ROS   ·   Sei wie Root!');
 
         const searchRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
         this._search = new St.Entry({
             hint_text: 'Programm oder Einstellung suchen …',
             can_focus: true,
             track_hover: true,
-            style: 'width: 592px; padding: 11px; background-color: #203429; color: #ffffff; border: 1px solid #5c9871; border-radius: 8px;'
+            style: 'width: 470px; padding: 10px; background-color: #203429; color: #ffffff; border: 1px solid #5c9871; border-radius: 8px;'
         });
         searchRow.addActor(this._search);
         this.menu.addMenuItem(searchRow);
         this._search.get_clutter_text().connect('text-changed', () => this._showApps());
 
-        // The most-used applications are always visible, not hidden in a submenu.
+        // Favorites are always visible as compact, one-click shortcuts.
         const favoriteRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
-        const favoriteBox = new St.BoxLayout({vertical: false, style: 'spacing: 8px; padding: 5px 4px 11px 4px;'});
-        for (const [title, id, symbol] of [
+        const favoriteBox = new St.BoxLayout({
+            vertical: false,
+            style: 'spacing: 9px; padding: 4px 2px 7px 2px;'
+        });
+        for (const [title, id, icon] of [
             ['Dateien', 'nemo.desktop', 'system-file-manager-symbolic'],
             ['Firefox', 'firefox.desktop', 'web-browser-symbolic'],
             ['Terminal', 'ros-terminal.desktop', 'utilities-terminal-symbolic']
         ]) {
             const button = new St.Button({
                 reactive: true, can_focus: true, track_hover: true,
-                style: 'padding: 8px 12px; background-color: #234631; color: #ffffff; border: 1px solid #47795a; border-radius: 7px;'
+                style: 'width: 135px; padding: 8px 9px; border-radius: 6px; background-color: #234631;'
             });
-            const content = new St.BoxLayout({vertical: false, style: 'spacing: 7px;'});
-            content.add_child(this._makeIcon(symbol, 18));
-            content.add_child(new St.Label({text: title, y_align: 2, style: 'color: #ffffff;'}));
-            button.set_child(content);
+            const inside = new St.BoxLayout({vertical: false, style: 'spacing: 7px;'});
+            inside.add_child(this._makeIcon(icon, 17));
+            inside.add_child(new St.Label({text: title, y_align: 2, style: 'color: #ffffff;'}));
+            button.set_child(inside);
             button.connect('clicked', () => this._launchId(id));
             favoriteBox.add_child(button);
         }
         favoriteRow.addActor(favoriteBox);
         this.menu.addMenuItem(favoriteRow);
 
-        const contentRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
-        const columns = new St.BoxLayout({vertical: false, style: 'spacing: 12px; padding: 3px 5px;'});
-        const categories = new St.BoxLayout({
-            vertical: true,
-            style: 'width: 175px; spacing: 1px; padding-right: 8px; border-right: 1px solid #416b51;'
-        });
-        for (const [label, key, icon] of SECTIONS) {
-            const button = new St.Button({
-                reactive: true, can_focus: true, track_hover: true,
-                style: 'padding: 8px 7px; border-radius: 6px;'
-            });
-            const inner = new St.BoxLayout({vertical: false, style: 'spacing: 9px;'});
-            inner.add_child(this._makeIcon(icon));
-            inner.add_child(new St.Label({text: label, y_align: 2, style: 'color: #f0fff3;'}));
-            button.set_child(inner);
-            button.connect('clicked', () => {
-                this._category = key;
-                this._search.set_text('');
-                this._showApps();
-            });
-            categories.add_child(button);
-            this._categoryButtons.push([key, button]);
+        const categoryItem = new PopupMenu.PopupBaseMenuItem({reactive: false});
+        const categoryGrid = new St.BoxLayout({vertical: true, style: 'spacing: 4px; padding: 5px 2px 6px 2px;'});
+        // Three even columns are easier to scan than a long left sidebar.
+        for (let index = 0; index < SECTIONS.length; index += 3) {
+            const row = new St.BoxLayout({vertical: false, style: 'spacing: 5px;'});
+            for (const [title, category, icon] of SECTIONS.slice(index, index + 3)) {
+                const button = new St.Button({
+                    reactive: true, can_focus: true, track_hover: true,
+                    style: 'width: 135px; padding: 7px 7px; border-radius: 6px;'
+                });
+                const contents = new St.BoxLayout({vertical: false, style: 'spacing: 6px;'});
+                contents.add_child(this._makeIcon(icon, 16));
+                contents.add_child(new St.Label({text: title, y_align: 2, style: 'color: #ffffff;'}));
+                button.set_child(contents);
+                button.connect('clicked', () => {
+                    this._category = category;
+                    this._search.set_text('');
+                    this._showApps();
+                });
+                row.add_child(button);
+                this._categoryButtons.push([category, button]);
+            }
+            categoryGrid.add_child(row);
         }
-        columns.add_child(categories);
+        categoryItem.addActor(categoryGrid);
+        this.menu.addMenuItem(categoryItem);
 
-        const right = new St.BoxLayout({vertical: true, style: 'width: 393px;'});
+        // Full-width list of programs; the search remains visible above.
+        const resultsRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
+        const resultsBox = new St.BoxLayout({vertical: true, style: 'width: 462px; padding: 0 2px;'});
         this._resultsTitle = new St.Label({
             text: 'Alle Programme',
-            style: 'font-weight: bold; color: #98edb5; padding: 7px;'
+            style: 'font-weight: bold; color: #98edb5; padding: 5px 7px;'
         });
-        right.add_child(this._resultsTitle);
+        resultsBox.add_child(this._resultsTitle);
         const scroll = new St.ScrollView({
-            style: 'max-height: 310px; min-height: 260px; width: 393px;',
+            style: 'width: 455px; min-height: 145px; max-height: 205px;',
             x_fill: true, y_fill: true
         });
         this._appList = new St.BoxLayout({vertical: true, style: 'spacing: 2px;'});
         scroll.add_actor(this._appList);
-        right.add_child(scroll);
-        columns.add_child(right);
-        contentRow.addActor(columns);
-        this.menu.addMenuItem(contentRow);
+        resultsBox.add_child(scroll);
+        resultsRow.addActor(resultsBox);
+        this.menu.addMenuItem(resultsRow);
 
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-        // High-frequency system actions are single-click, always visible.
         const powerRow = new PopupMenu.PopupBaseMenuItem({reactive: false});
-        const powerBox = new St.BoxLayout({vertical: false, style: 'spacing: 9px; padding: 5px 4px 3px 4px;'});
+        const powerBox = new St.BoxLayout({vertical: false, style: 'spacing: 6px; padding: 3px 2px 2px 2px;'});
         for (const [title, icon, command] of [
             ['Sperren', 'system-lock-screen-symbolic', 'cinnamon-screensaver-command --lock'],
             ['Abmelden', 'system-log-out-symbolic', 'cinnamon-session-quit --logout'],
+            ['Neustart', 'view-refresh-symbolic', 'cinnamon-session-quit --reboot'],
             ['Ausschalten', 'system-shutdown-symbolic', 'cinnamon-session-quit --power-off']
         ]) {
             const button = new St.Button({
                 reactive: true, can_focus: true, track_hover: true,
-                style: 'padding: 9px 12px; background-color: #213328; color: #ffffff; border-radius: 7px;'
+                style: 'padding: 8px 7px; border-radius: 6px; background-color: #213328;'
             });
-            const content = new St.BoxLayout({vertical: false, style: 'spacing: 7px;'});
-            content.add_child(this._makeIcon(icon, 17));
-            content.add_child(new St.Label({text: title, y_align: 2, style: 'color: #ffffff;'}));
-            button.set_child(content);
+            const contents = new St.BoxLayout({vertical: false, style: 'spacing: 5px;'});
+            contents.add_child(this._makeIcon(icon, 15));
+            contents.add_child(new St.Label({text: title, y_align: 2, style: 'color: #ffffff;'}));
+            button.set_child(contents);
             button.connect('clicked', () => {
                 this.menu.close();
                 Util.spawnCommandLine(command);
             });
             powerBox.add_child(button);
         }
-        const reboot = new St.Button({
-            reactive: true, can_focus: true, track_hover: true,
-            style: 'padding: 9px 12px; background-color: #213328; color: #ffffff; border-radius: 7px;'
-        });
-        const rebootContent = new St.BoxLayout({vertical: false, style: 'spacing: 7px;'});
-        rebootContent.add_child(this._makeIcon('view-refresh-symbolic', 17));
-        rebootContent.add_child(new St.Label({text: 'Neustart', y_align: 2, style: 'color: #ffffff;'}));
-        reboot.set_child(rebootContent);
-        reboot.connect('clicked', () => {
-            this.menu.close();
-            Util.spawnCommandLine('cinnamon-session-quit --reboot');
-        });
-        powerBox.add_child(reboot);
         powerRow.addActor(powerBox);
         this.menu.addMenuItem(powerRow);
     }
