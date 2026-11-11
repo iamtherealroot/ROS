@@ -50,7 +50,7 @@ class ROSMenu extends Applet.TextIconApplet {
     _build() {
         this.menu.actor.style = 'min-width: 440px; background-color: #101d16; color: #eaf8ee;';
         this._heading('ROS  ·  Sei wie Root!');
-        const inputItem = new PopupMenu.PopupBaseMenuItem({ reactive: false, can_focus: false });
+        const inputItem = new PopupMenu.PopupBaseMenuItem({ reactive: false });
         this._search = new St.Entry({
             hint_text: 'Programme suchen …',
             can_focus: true,
